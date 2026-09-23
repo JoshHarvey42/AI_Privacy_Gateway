@@ -2,6 +2,7 @@
 
 ## AI Suggestion
 
+ChatGPT suggested that I "use a fixed set of synthetic help desk examples to test the AI instead of creating new examples each time"
 
 
 ## Tech Spike
