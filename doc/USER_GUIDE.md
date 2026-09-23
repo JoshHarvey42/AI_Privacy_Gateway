@@ -26,9 +26,9 @@ Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to W
 
 ## Data
 
-* Use synthetic data only.
-* Do not use real employee information.
+* Uses synthetic data only.
+* Does not use real employee information.
 
 ## Errors
 
-* Invalid or unknown placeholders should result in an error.
+* Invalid or unknown placeholders result in an error.
