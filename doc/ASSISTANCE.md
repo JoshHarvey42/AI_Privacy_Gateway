@@ -2,31 +2,27 @@
 
 Each entry: what was suggested, what I decided, and how I checked it.
 
-## 1. Planning: pipeline and placeholder form (M1)
+## 1. Rejecting placeholder-like input
 
-- Suggestion: build the pipeline as detect, mask, mock provider, validate, restore, and use placeholders like [[r1:NAME:1]] with the request id inside.
-- Decision: accepted.
-- Check: traced the handbook example by hand, then ran the example ticket and compared the masked text and final output with my expected values.
+- Suggestion: Rejecting any inputs that try to forge a placeholder
+- Decision: Made a test case to check for forged placeholders.
 
-## 2. Code: first version of main.py (M2)
+## 2. Code: first version of main.py
 
-- Suggestion: a single-file program using regular expressions and a term list, with the mapping kept as a local variable in run().
-- Decision: accepted, after simplifying it (removed JSON input/output, extra error codes, and command-line options other than --bad-provider) because the course has no shared JSON contract.
-- Check: ran the program on the example ticket, and ran the 7 unit tests.
+- Suggestion: How to format the program
+- Decision: Kept all the code in two files.
 
-## 3. Tests (M2)
+## 3. Tests
 
-- Suggestion: tests for the four M1 cases plus an IP case, an exact check of the masked text, and a reserved-placeholder input case.
-- Decision: accepted.
-- Check: all 7 tests pass; confirmed manually that the masked text contains no protected values.
+- Suggestion: What test cases to check.
+- Decision: Included each test case and manually checked to make sure they work.
 
-## 4. Documentation (M2)
+## 4. Documentation
 
-- Suggestion: README and the four docs files drafted from the handbook requirements.
-- Decision: accepted with edits to match the real program (names list, exact output text).
-- Check: ran every command in the README and compared the output to the text written there.
+- Suggestion: Ways to format the documents.
+- Decision: Changed the formatting of the documents with some edits.
 
-## Tech Spike (M1)
+## Tech Spike
 
 - Runtime: Python 3.15.1
 - Command: `python tech_spike.py`
