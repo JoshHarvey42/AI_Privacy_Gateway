@@ -31,7 +31,7 @@ Each entry: what was suggested, what I decided, and how I checked it.
 - Runtime: Python 3.15.1
 - Command: `python tech_spike.py`
 - Input: `testing`
-- output: `Output: testing`
+- Output: `Output: testing`
 
 ## Other sources
 
