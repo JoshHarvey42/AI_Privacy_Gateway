@@ -1,42 +1,25 @@
 # Assistance
 
-## AI Suggestion
+## AI Planning Suggestion
 
-Suggestion:
+Suggestion: Use a regular expression to detect IP addresses.
 
-- Use a regular expression to find IP addresses.
+Decision: Accepted because IP addresses follow a recognizable pattern.
 
-Decision:
-
-- Accepted.
-
-Reason:
-
-- IP addresses follow a recognizable pattern, so a pattern is suitable for finding them.
-
-Verification:
-
-- Test the pattern with example IP addresses.
-- Check that valid examples are detected and invalid examples are not incorrectly accepted.
+Verification: Test the pattern with synthetic valid and invalid IP addresses and record the observed results.
 
 ## Tech Spike
 
-Purpose:
+Purpose: Confirm that Python can read and print text.
 
-- Check that Python can read and print text.
+- Runtime: 3.15.1
+- Command: `python tech_spike.py`
+- Input: `Hello IT Help Desk`
+- Observed output: `Hello IT Help Desk`
 
-Runtime:
+## Design Decisions
 
-- Record the exact Python version from the local environment.
-
-Command:
-
-- python tech_spike.py
-
-Input:
-
-- Hello IT Help Desk
-
-Observed Output:
-
-- Hello IT Help Desk
+- Python was chosen because it keeps text processing and testing relatively simple.
+- A local synthetic term list is used for names, employee IDs, and ticket numbers.
+- A regular expression is used for IP addresses.
+- An offline mock provider makes testing repeatable without sending data to a real service.
