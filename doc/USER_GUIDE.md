@@ -1,32 +1,33 @@
 # User Guide
 
-## Requirements
+## What it does
 
-Python 3 is required. Use synthetic data only.
+Takes the text of one IT support ticket, hides private values, gets a summary from an offline mock provider, and shows the summary with the private values restored.
 
-## Running the Program
+## Run
 
-- Start the program with the documented run command.
-- Enter an IT help desk ticket.
-- The program masks supported private information, processes the masked ticket with the offline mock provider, checks the response, and restores valid values.
+    python main.py "<ticket text>"
 
-## Example Input
+Put the ticket text in quotes. Example:
 
-Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi at 192.168.1.25.
+    python main.py "Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi."
 
-## Supported Information
+## Supported formats
 
-- Employee names
-- Employee IDs
-- Ticket numbers
-- IP addresses
+- Names: only names in the NAMES list at the top of main.py (add synthetic names there)
+- Employee IDs: EMP followed by digits, such as EMP1042
+- Ticket numbers: IT- followed by digits, such as IT-5821
+- IP addresses: four numbers separated by dots, such as 192.168.1.25
 
-Names, IDs, and ticket numbers must match the local synthetic term list. IP addresses are detected by a pattern.
+## Warnings
 
-## Output and Errors
+- Use synthetic data only.
+- A name that is not in the list is not masked.
+- The mock provider is not a real AI. The summary wording is fixed by the program.
 
-The program displays a short ticket summary with valid placeholders restored. If the response contains an invalid or unknown placeholder, the program returns a controlled error instead of restoring it.
+## Troubleshooting
 
-## JSON Input and Output
-
-The program follows the shared course JSON I/O contract. Document the required input fields, output fields, and error format here using the exact contract supplied for the project.
+- ERROR: input contains reserved placeholder syntax: your text includes something like [[r1:NAME:1]]. Remove it.
+- ERROR: invalid placeholder in response: the provider returned a placeholder that was not issued for this request. This is expected with --bad-provider.
+- A name was not hidden: add it to NAMES in main.py.
+- python not found: try python3 main.py "..."
