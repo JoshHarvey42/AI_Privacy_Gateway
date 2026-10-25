@@ -2,16 +2,41 @@
 
 ## AI Suggestion
 
-ChatGPT suggested that I "use a fixed set of synthetic help desk examples to test the AI instead of creating new examples each time"
+Suggestion:
 
+- Use a regular expression to find IP addresses.
+
+Decision:
+
+- Accepted.
+
+Reason:
+
+- IP addresses follow a recognizable pattern, so a pattern is suitable for finding them.
+
+Verification:
+
+- Test the pattern with example IP addresses.
+- Check that valid examples are detected and invalid examples are not incorrectly accepted.
 
 ## Tech Spike
 
-The tech spike tested basic text input and output using Python.
+Purpose:
 
-* Runtime version: Python 3.x
-* Command: `python tech_spike.py`
-* Input: Hello world.
-* Output: Hello world.
-* Result: The program successfully read the text and printed it back.
+- Check that Python can read and print text.
 
+Runtime:
+
+- Record the exact Python version from the local environment.
+
+Command:
+
+- python tech_spike.py
+
+Input:
+
+- Hello IT Help Desk
+
+Observed Output:
+
+- Hello IT Help Desk
