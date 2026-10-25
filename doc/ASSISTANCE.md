@@ -15,7 +15,7 @@ Purpose: Confirm that Python can read and print text.
 - Runtime: 3.15.1
 - Command: `python tech_spike.py`
 - Input: `Hello IT Help Desk`
-- Observed output: `Hello IT Help Desk`
+- Observed output: `Output: Hello IT Help Desk`
 
 ## Design Decisions
 
