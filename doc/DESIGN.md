@@ -2,70 +2,70 @@
 
 ## User
 
-* IT help desk technician
+- IT help desk technician.
 
 ## Task
 
-* Summarize IT help desk tickets using AI.
+- Summarize IT help desk tickets using AI.
 
 ## Goal
 
-* Keep private information on the user's computer while still getting a useful summary.
+- Protect private information while allowing AI to produce a useful ticket summary.
 
 ## Sensitive Information
 
-* Employee names
-* Employee IDs
-* Ticket numbers
-* IP addresses
+- Employee names
+- Employee IDs
+- Ticket numbers
+- IP addresses
 
 ## Expected Output
 
-* A short summary of the problem.
-* Any requested action from the ticket.
+- A short summary of the technical problem and any requested action.
 
-## Non-Goals
+## Language Comparison
 
-* No real employee information
-* No real help desk system
-* No graphical interface
-* No live AI service
-* No multi-turn conversations
+Python was chosen for this project. Java was considered as an alternative.
+
+- Text processing: Python has simple tools for finding and replacing text. Java can do this too, but usually requires more code. Python is a good fit because this project mainly works with text.
+- Error handling: Python uses exceptions to handle problems, while Java also supports exceptions and has stricter type checking. Java's type checking can catch some mistakes before the program runs, but Python is simpler for building this small prototype.
+- Testing: Python has a built-in testing option that is easy to use for automated tests. Java also supports automated testing, but commonly uses additional testing tools.
+
+Python was selected because it allows the project to focus on the privacy process without requiring as much supporting code.
 
 ## How It Works
 
-* The user enters a ticket.
-* The program finds private information.
-* The private information is replaced with placeholders.
-* The ticket is sent to a mock AI.
-* The response is checked.
-* The original information is put back into the response.
+- The user enters a ticket.
+- The program finds supported private information.
+- Private information is replaced with placeholders.
+- The masked ticket goes to an offline mock provider.
+- The response is checked for invalid placeholders.
+- Valid placeholders are replaced with their original values.
+- The final summary is displayed.
 
-## Language
+## Local and External Boundary
 
-* Python will be used.
-* Java was considered as an alternative.
-* Python was chosen because it makes working with text simpler.
-* Java would provide more structure but would require more code.
+The original ticket, private information, placeholder mappings, detection, validation, and restoration stay local.
 
-## Basic Flow
+The mock provider receives only the masked ticket. The prototype does not send information to a real AI service.
 
-* Input
-* Find private information
-* Replace private information
-* Get AI response
-* Check response
-* Put information back
-* Show final result
+## Components
 
-## Placeholder Examples
+- Detector: Finds supported private information.
+- Masker: Replaces private information with placeholders.
+- Mapping: Keeps track of the original values for the current request.
+- Mock provider: Produces a predictable summary without using an online AI service.
+- Validator: Checks that the response does not contain invalid placeholders.
+- Restorer: Replaces valid placeholders with their original values.
 
-* [[r1:NAME:1]]
-* [[r1:EMPLOYEE_ID:1]]
-* [[r1:TICKET:1]]
-* [[r1:IP:1]]
+## Placeholder Format
 
-The placeholders allow the program to keep track of the original information.
+- [[r1:NAME:1]]
+- [[r1:EMPLOYEE_ID:1]]
+- [[r1:TICKET:1]]
+- [[r1:IP:1]]
+
+Repeated values should use the same placeholder within a request. Different values should have separate placeholders.
 
 ## Initial Prompt
 
