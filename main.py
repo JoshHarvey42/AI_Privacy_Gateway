@@ -1,14 +1,17 @@
-"""AI Privacy Gateway - M2 prototype.
-Pipeline: input -> detect -> mask -> mock provider -> validate -> restore -> output
-Usage:  python gateway.py "Draft a reply to Evan Lane about case 1042."
-        python gateway.py --bad-provider "..."   (mock returns an invalid placeholder)
-"""
 import re
 import sys
 
-NAMES = ["Evan Lane", "Maria Ortiz"]           # synthetic term list (NAME)
-CASE_RE = re.compile(r"(?i:(?<=case ))\d{3,}")  # structured pattern (CASE)
+NAMES = ["Sarah Johnson", "Michael Chen"]  # synthetic name list
+PATTERNS = {                                # structured patterns
+    "EMPID": re.compile(r"\bEMP\d+\b"),
+    "TICKET": re.compile(r"\bIT-\d+\b"),
+    "IP": re.compile(r"\b\d{1,3}(?:\.\d{1,3}){3}\b"),
+}
+PROMPT = ("You summarize IT help desk tickets in one or two sentences. "
+             "Keep every [[...]] placeholder exactly as written. "
+             "Do not invent facts.")
 TOKEN_RE = re.compile(r"\[\[(r\d+):([A-Z]+):(\d+)\]\]")
+
 
 class GatewayError(Exception):
     pass
@@ -20,7 +23,8 @@ def mask(text, rid):
         raise GatewayError("input contains reserved placeholder syntax")
     matches = [(m.start(), m.end(), "NAME") for n in NAMES
                for m in re.finditer(re.escape(n), text)]
-    matches += [(m.start(), m.end(), "CASE") for m in CASE_RE.finditer(text)]
+    for cat, rx in PATTERNS.items():
+        matches += [(m.start(), m.end(), cat) for m in rx.finditer(text)]
     mapping, seen, counts, out, pos = {}, {}, {}, [], 0
     for start, end, cat in sorted(matches):
         if start < pos:                         # skip overlapping match
@@ -35,15 +39,21 @@ def mask(text, rid):
     return "".join(out) + text[pos:], mapping
 
 
-def mock_provider(masked, bad=False):
-    """Offline, deterministic stand-in for the AI."""
-    tokens = {m.group(2): m.group(0) for m in TOKEN_RE.finditer(masked)}
+def mock_provider(prompt, masked, bad=False):
+    """Offline stand-in for the AI (ignores the prompt text)."""
     if bad:
-        return "Hello [[r1:NAME:99]], we received your request."
-    greeting = f"Hello {tokens['NAME']}," if "NAME" in tokens else "Hello,"
-    body = f"we received case {tokens['CASE']}." if "CASE" in tokens \
-        else "we received your request."
-    return f"{greeting} {body}"
+        return "Summary: [[r1:NAME:99]] reported an issue."
+    t = {}
+    for m in TOKEN_RE.finditer(masked):
+        t.setdefault(m.group(2), m.group(0))
+    who = t.get("NAME", "A user") + (f" ({t['EMPID']})" if "EMPID" in t else "")
+    s = f"Summary: {who} reported an issue"
+    if "TICKET" in t:
+        s += f" in ticket {t['TICKET']}"
+    if "IP" in t:
+        s += f" on device {t['IP']}"
+    details = re.split(r"(?<=[.!?])\s+", masked.strip())[-1]
+    return f"{s}. Details: {details}"
 
 
 def validate(response, rid, mapping):
@@ -54,7 +64,7 @@ def validate(response, rid, mapping):
 
 def run(text, rid="r1", bad_provider=False):
     masked, mapping = mask(text, rid)           # mapping exists only in this call
-    response = mock_provider(masked, bad_provider)
+    response = mock_provider(PROMPT, masked, bad_provider)
     validate(response, rid, mapping)
     return TOKEN_RE.sub(lambda m: mapping[m.group(0)], response)
 
