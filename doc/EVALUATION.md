@@ -1,56 +1,27 @@
 # Evaluation
 
-## Test 1: Normal Input
+## Test Cases
 
-Input:
+- Normal input: Sensitive information is masked, the ticket is summarized, and valid values are restored.
+- Repeated values: Repeated names and ticket numbers use the same placeholders and are restored correctly.
+- No sensitive information: The ticket is summarized without masking.
+- Invalid placeholder: A placeholder such as `[[r1:EMPLOYEE_ID:999]]` is rejected if it was never issued.
+- Multiple values: Different sensitive values in one ticket receive the correct placeholders.
+- Structured pattern: Example IP addresses are detected correctly.
+- Mock provider: The same masked input produces a predictable response.
 
-Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi.
+## Running Tests
 
-Expected:
-
-- Private information is replaced with placeholders.
-- The mock provider summarizes the ticket.
-- Valid placeholders are restored.
-
-## Test 2: Repeated Information
-
-Input:
-
-Sarah Johnson submitted ticket IT-5821. Sarah Johnson wants an update on IT-5821.
-
-Expected:
-
-- Repeated values use the same placeholders.
-- The original values are restored correctly.
-
-## Test 3: No Private Information
-
-Input:
-
-The laptop cannot connect to Wi-Fi.
-
-Expected:
-
-- No information is masked.
-- The ticket is summarized normally.
-
-## Test 4: Invalid Placeholder
-
-Example invalid placeholder:
-
-[[r1:EMPLOYEE_ID:999]]
-
-Expected:
-
-- The validator detects that the placeholder was not issued for the request.
-- The program returns a controlled error.
-- The invalid placeholder is not restored.
+Run the automated tests with the project's documented test command. Record the actual results after running them.
 
 ## Results
 
-Results will be recorded after running the automated tests.
+- Normal input: Record result.
+- Repeated values: Record result.
+- No sensitive information: Record result.
+- Invalid placeholder: Record result.
+- Multiple values and IP addresses: Record result.
 
 ## Limitations
 
-- The program only detects the supported types of private information.
-- The mock provider does not use a real AI service.
+The prototype only detects supported information types and uses an offline mock provider instead of a real AI service. It is not a complete privacy detector.
