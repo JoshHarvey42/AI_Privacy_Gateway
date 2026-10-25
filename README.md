@@ -1,23 +1,37 @@
 # IT Help Desk Privacy Gateway
 
-A local privacy gateway that allows an IT help desk technician to
-use AI to summarize support tickets without exposing sensitive
-employee or ticket information.
+This project helps IT help desk technicians summarize support tickets while protecting private information. The program replaces sensitive values before sending text to an offline mock provider, checks the response, and restores valid values locally.
 
-## Scope
+## Requirements
 
-The system detects employee names, employee IDs, ticket numbers,
-and IP addresses. It masks these values before sending the request
-to an AI provider and restores authorized values locally.
-
-## Setup
-
-[commands will go here]
+- Python 3
 
 ## Run
 
-[command will go here]
+- Run the program with `python main.py`.
+- Run the tests with `python -m unittest`.
+
+These commands assume the program and tests use these entry points.
 
 ## Example
 
-[input and expected output will go here]
+Input:
+
+Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi.
+
+Expected output:
+
+A short summary of the Wi-Fi problem with the original information restored.
+
+## Supported Information
+
+- Employee names
+- Employee IDs
+- Ticket numbers
+- IP addresses
+
+## Testing
+
+The tests cover normal input, repeated values, input without sensitive information, and invalid placeholders.
+
+Use synthetic data only. The prototype does not use a real AI service.
