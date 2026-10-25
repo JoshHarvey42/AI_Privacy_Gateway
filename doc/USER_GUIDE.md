@@ -1,34 +1,32 @@
 # User Guide
 
-## Purpose
+## Requirements
 
-* Summarize IT help desk tickets while protecting private information.
+Python 3 is required. Use synthetic data only.
 
-## Input
+## Running the Program
 
-The user enters an IT help desk ticket.
+- Start the program with the documented run command.
+- Enter an IT help desk ticket.
+- The program masks supported private information, processes the masked ticket with the offline mock provider, checks the response, and restores valid values.
 
-Example:
+## Example Input
 
-Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi.
-
-## Output
-
-* A short summary of the ticket.
-* The original private information is put back into the result when appropriate.
+Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi at 192.168.1.25.
 
 ## Supported Information
 
-* Employee names
-* Employee IDs
-* Ticket numbers
-* IP addresses
+- Employee names
+- Employee IDs
+- Ticket numbers
+- IP addresses
 
-## Data
+Names, IDs, and ticket numbers must match the local synthetic term list. IP addresses are detected by a pattern.
 
-* Uses synthetic data only.
-* Does not use real employee information.
+## Output and Errors
 
-## Errors
+The program displays a short ticket summary with valid placeholders restored. If the response contains an invalid or unknown placeholder, the program returns a controlled error instead of restoring it.
 
-* Invalid or unknown placeholders result in an error.
+## JSON Input and Output
+
+The program follows the shared course JSON I/O contract. Document the required input fields, output fields, and error format here using the exact contract supplied for the project.
