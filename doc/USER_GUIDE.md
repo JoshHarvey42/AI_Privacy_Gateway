@@ -6,7 +6,7 @@ Takes the text of one IT support ticket, hides private values, gets a summary fr
 
 ## Run
 
-    python main.py "<ticket text>"
+    python main.py "<insert ticket>"
 
 Put the ticket text in quotes. Example:
 
