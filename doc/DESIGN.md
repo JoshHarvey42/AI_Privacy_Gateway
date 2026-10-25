@@ -1,56 +1,90 @@
 # Design
 
-## User and Task
+## Problem and motivation
 
-The user is an IT help desk technician who needs short summaries of support tickets.
+IT help desk tickets contain employee names, employee IDs, ticket numbers, and IP addresses. A cloud AI can summarize a ticket, but it does not need those identifiers. The goal is to keep them on the local machine while still getting a useful summary.
 
-## Goal
+## User and task
 
-Protect private information while allowing an AI-style provider to summarize a ticket.
+- User: an IT help desk technician
+- Task: summarize one support ticket
+- Useful output: a short summary that names the right person, ticket, and device, and describes the problem, without inventing facts
 
-## Sensitive Information
+## Sensitive categories
 
-- Employee names, employee IDs, and ticket numbers are detected using a local list of synthetic examples.
-- IP addresses are detected using a regular expression.
+- NAME: employee names (example: Sarah Johnson)
+- EMPID: employee IDs (example: EMP1042)
+- TICKET: ticket numbers (example: IT-5821)
+- IP: IP addresses (example: 192.168.1.25)
 
-## Language Choice
+## Success criteria
 
-Python was chosen over Java because it requires less code for text processing and is straightforward to test. Java offers stricter type checking, which can catch some mistakes earlier, but requires more structure. Python is a better fit for this small text-processing project.
+- No protected value appears in the text sent to the provider
+- Repeated values get the same placeholder; different values get different placeholders
+- Valid placeholders in the response are restored correctly
+- Invalid or reserved placeholders produce a controlled error, not a crash or a wrong restore
 
-## How It Works
+## Non-goals
 
-- Read the ticket and detect supported private information.
-- Replace detected values with placeholders.
-- Save the original values in a mapping for the current request.
-- Send the masked ticket to the offline mock provider.
-- Validate the response.
-- Restore valid placeholders and display the result.
+- No graphical interface, real customer data, or paid AI access
+- No multi-turn conversations
+- No universal detector (unlisted names are not found)
 
-## Local and External Boundary
+## Scope by milestone
 
-The original ticket, sensitive values, placeholder mappings, detection, validation, and restoration stay local. The mock provider receives only the masked ticket. No real AI service is used.
+- M2 (this version): the full pipeline, four categories, request-local mappings, controlled errors, automated tests
+- M3 (later): MASK/REMOVE policy, cross-request isolation, timeout and malformed-response simulation, prompt comparison
 
-## Components
+## Language choice: Python
 
-- Detector: Finds supported private information.
-- Masker: Replaces detected values with placeholders.
-- Mapping: Keeps track of original values for the request.
-- Mock provider: Produces a predictable response without an online service.
-- Validator: Checks for invalid placeholders.
-- Restorer: Replaces valid placeholders with their original values.
+Python was compared with Java.
 
-## Placeholders
+- String processing: Python has built-in regular expressions and simple string handling, so detection and replacement take few lines. Java needs more code for the same work.
+- Type system: Java checks types at compile time and would catch some mistakes earlier. Python is dynamically typed, so errors such as passing the wrong type appear only when the code runs. I accept this because the program is small and unit tests cover the main paths.
+- Error handling: Python exceptions (GatewayError) make controlled errors short to write. Java would work equally well but needs more setup.
+- Deployment: Python runs directly with one command and no build step.
 
-Examples: `[[r1:NAME:1]]`, `[[r1:EMPLOYEE_ID:1]]`, `[[r1:TICKET:1]]`, and `[[r1:IP:1]]`.
+Choice: Python, because string processing and quick testing matter most for this task.
 
-Repeated values use the same placeholder within a request. Different values receive different placeholders.
+## Data flow and boundary
 
-## Initial Prompt
+    LOCAL                                          EXTERNAL (mock)
+    input text
+      -> detect sensitive values
+      -> mask (placeholders + local mapping)
+      -> [ prompt + masked text ] ----------------> mock provider
+                                    <---------------- response
+      -> validate placeholders
+      -> restore from local mapping
+      -> final output
 
-You are an IT help desk ticket summarization assistant. Summarize the technical problem in 1–3 sentences, identify the main issue and requested action, do not invent information, and preserve all placeholders exactly.
+Stays local: original text, the mapping from placeholder to real value, the final output.
+May be sent: the versioned prompt and the masked text only.
+Checked before restoring: every placeholder in the response must belong to this request and exist in the mapping.
 
-## M2 Scope
+## Components (all in main.py)
 
-The prototype implements the full input, detection, masking, mock provider, validation, restoration, and output process. It includes repeated values, multiple sensitive values in one request, and controlled errors for invalid placeholders.
+- mask(): finds sensitive values, builds placeholders and the local mapping, rejects input that already contains placeholder syntax
+- mock_provider(): offline, deterministic stand-in for the AI
+- validate(): checks response placeholders
+- run(): connects the steps; the mapping is a local variable, so it is released when the function returns
+- main block: reads the command line, prints output or an error
 
-MASK/REMOVE policies, real AI services, a graphical interface, and multi-turn conversations are outside the M2 scope.
+## Placeholder form
+
+[[r1:NAME:1]]: request id, category, number within that category and request. The same value in one request always gets the same placeholder. The request id lets a later milestone reject placeholders from another request.
+
+## Prompt
+
+    You summarize IT help desk tickets in one or two sentences.
+    Keep every [[...]] placeholder exactly as written. Do not invent facts.
+
+The prompt is stored as PROMPT in main.py and passed to the provider with the masked text. The offline mock ignores the prompt text, so M2 tests check gateway behavior only, not prompt quality.
+
+## Design decisions
+
+- Mapping is local to one function call: simplest way to guarantee no state is shared between requests.
+- Overlapping matches: sort by start position and skip any match that begins inside an earlier one. Simple and deterministic.
+- Input containing placeholder-like text is rejected, so a user cannot forge a placeholder the gateway would later restore.
+- Plain text input and output: there is no shared JSON contract, so the simplest interface was chosen.
+- Errors use one exception class (GatewayError) and exit code 1.
