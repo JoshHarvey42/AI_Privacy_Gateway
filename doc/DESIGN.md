@@ -1,74 +1,56 @@
 # Design
 
-## User
+## User and Task
 
-- IT help desk technician.
-
-## Task
-
-- Summarize IT help desk tickets using AI.
+The user is an IT help desk technician who needs short summaries of support tickets.
 
 ## Goal
 
-- Protect private information while allowing AI to produce a useful ticket summary.
+Protect private information while allowing an AI-style provider to summarize a ticket.
 
 ## Sensitive Information
 
-- Employee names
-- Employee IDs
-- Ticket numbers
-- IP addresses
+- Employee names, employee IDs, and ticket numbers are detected using a local list of synthetic examples.
+- IP addresses are detected using a regular expression.
 
-## Expected Output
+## Language Choice
 
-- A short summary of the technical problem and any requested action.
-
-## Language Comparison
-
-Python was chosen for this project. Java was considered as an alternative.
-
-- Text processing: Python has simple tools for finding and replacing text. Java can do this too, but usually requires more code. Python is a good fit because this project mainly works with text.
-- Error handling: Python uses exceptions to handle problems, while Java also supports exceptions and has stricter type checking. Java's type checking can catch some mistakes before the program runs, but Python is simpler for building this small prototype.
-- Testing: Python has a built-in testing option that is easy to use for automated tests. Java also supports automated testing, but commonly uses additional testing tools.
-
-Python was selected because it allows the project to focus on the privacy process without requiring as much supporting code.
+Python was chosen over Java because it requires less code for text processing and is straightforward to test. Java offers stricter type checking, which can catch some mistakes earlier, but requires more structure. Python is a better fit for this small text-processing project.
 
 ## How It Works
 
-- The user enters a ticket.
-- The program finds supported private information.
-- Private information is replaced with placeholders.
-- The masked ticket goes to an offline mock provider.
-- The response is checked for invalid placeholders.
-- Valid placeholders are replaced with their original values.
-- The final summary is displayed.
+- Read the ticket and detect supported private information.
+- Replace detected values with placeholders.
+- Save the original values in a mapping for the current request.
+- Send the masked ticket to the offline mock provider.
+- Validate the response.
+- Restore valid placeholders and display the result.
 
 ## Local and External Boundary
 
-The original ticket, private information, placeholder mappings, detection, validation, and restoration stay local.
-
-The mock provider receives only the masked ticket. The prototype does not send information to a real AI service.
+The original ticket, sensitive values, placeholder mappings, detection, validation, and restoration stay local. The mock provider receives only the masked ticket. No real AI service is used.
 
 ## Components
 
 - Detector: Finds supported private information.
-- Masker: Replaces private information with placeholders.
-- Mapping: Keeps track of the original values for the current request.
-- Mock provider: Produces a predictable summary without using an online AI service.
-- Validator: Checks that the response does not contain invalid placeholders.
+- Masker: Replaces detected values with placeholders.
+- Mapping: Keeps track of original values for the request.
+- Mock provider: Produces a predictable response without an online service.
+- Validator: Checks for invalid placeholders.
 - Restorer: Replaces valid placeholders with their original values.
 
-## Placeholder Format
+## Placeholders
 
-- [[r1:NAME:1]]
-- [[r1:EMPLOYEE_ID:1]]
-- [[r1:TICKET:1]]
-- [[r1:IP:1]]
+Examples: `[[r1:NAME:1]]`, `[[r1:EMPLOYEE_ID:1]]`, `[[r1:TICKET:1]]`, and `[[r1:IP:1]]`.
 
-Repeated values should use the same placeholder within a request. Different values should have separate placeholders.
+Repeated values use the same placeholder within a request. Different values receive different placeholders.
 
 ## Initial Prompt
 
-You are an IT help desk ticket summarization assistant.
+You are an IT help desk ticket summarization assistant. Summarize the technical problem in 1–3 sentences, identify the main issue and requested action, do not invent information, and preserve all placeholders exactly.
 
-Summarize the technical problem in 1–3 sentences. Identify the main issue and requested action. Do not invent information. Preserve all placeholders exactly as they appear.
+## M2 Scope
+
+The prototype implements the full input, detection, masking, mock provider, validation, restoration, and output process. It includes repeated values, multiple sensitive values in one request, and controlled errors for invalid placeholders.
+
+MASK/REMOVE policies, real AI services, a graphical interface, and multi-turn conversations are outside the M2 scope.
