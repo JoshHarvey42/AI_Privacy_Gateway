@@ -29,9 +29,9 @@ Each entry: what was suggested, what I decided, and how I checked it.
 ## Tech Spike (M1)
 
 - Runtime: Python 3.15.1
-- Command: echo "Sarah Johnson (EMP1042) submitted ticket IT-5821." | python -c "import sys; print(sys.stdin.read().strip())"
-- Input: Sarah Johnson (EMP1042) submitted ticket IT-5821.
-- Observed output: Sarah Johnson (EMP1042) submitted ticket IT-5821.
+- Command: `python tech_spike.py`
+- Input: `testing`
+- output: `Output: testing`
 
 ## Other sources
 
