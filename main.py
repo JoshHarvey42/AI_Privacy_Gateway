@@ -2,103 +2,178 @@ import re
 import sys
 
 NAMES = ["Sarah Johnson", "Michael Chen"]  # synthetic term list
-PATTERNS = {                                # structured patterns
+PATTERNS = {
     "EMPID": re.compile(r"\bEMP\d+\b"),
     "TICKET": re.compile(r"\bIT-\d+\b"),
     "IP": re.compile(r"\b\d{1,3}(?:\.\d{1,3}){3}\b"),
 }
-PROMPT_VERSION = "v1"
-PROMPT_V1 = ("You summarize IT help desk tickets in one or two sentences. "
-             "Keep every [[...]] placeholder exactly as written. "
-             "Do not invent facts.")
-TOKEN_RE = re.compile(r"\[\[(r\d+):([A-Z]+):(\d+)\]\]")  # one valid placeholder
-FLAGS = {"--show-request", "--bad-provider", "--malformed-provider"}
-
+CATEGORIES = {"NAME", "EMPID", "TICKET", "IP"}
+PROMPTS = {
+    "v1": ("You summarize IT help desk tickets in one or two sentences. "
+           "Keep every [[...]] placeholder exactly as written. Do not invent facts."),
+    "v2": ("You summarize an IT help desk ticket for a technician. "
+           "Return a Summary and Details section. Include the reported issue "
+           "and relevant device or ticket details when present. "
+           "Keep every [[...]] placeholder exactly as written. Do not invent facts."),
+}
+TOKEN_RE = re.compile(r"\[\[([A-Za-z0-9_-]+):([A-Z]+):(\d+)\]\]")
 
 class GatewayError(Exception):
     pass
 
+def detect(text):
+    matches = [(m.start(), m.end(), "NAME", m.group())
+               for name in NAMES
+               for m in re.finditer(re.escape(name), text)]
+    for category, pattern in PATTERNS.items():
+        matches += [(m.start(), m.end(), category, m.group())
+                    for m in pattern.finditer(text)]
+    return matches
 
-def mask(text, rid):
-    """Replace sensitive values with [[rid:CATEGORY:n]]; mapping stays local."""
-    if TOKEN_RE.search(text):
+def resolve_overlaps(matches):
+    selected = []
+    for match in sorted(matches, key=lambda m: (m[0], -(m[1] - m[0]), m[2])):
+        if not selected or match[0] >= selected[-1][1]:
+            selected.append(match)
+    return selected
+
+def apply_policies(matches, policies=None):
+    policies = policies or {}
+    result = []
+    for category, policy in policies.items():
+        if category not in CATEGORIES:
+            raise GatewayError(f"invalid policy category: {category}")
+        if not isinstance(policy, str) or policy.upper() not in ("MASK", "REMOVE"):
+            raise GatewayError(f"invalid policy for {category}: {policy}")
+
+    for start, end, category, value in resolve_overlaps(matches):
+        result.append((start, end, category, value,
+                       policies.get(category, "MASK").upper()))
+    return result
+
+def build_mapping(text, matches, rid):
+    mapping, seen, counts = {}, {}, {}
+    output, position = [], 0
+    for start, end, category, value, policy in matches:
+        output.append(text[position:start])
+        if policy == "REMOVE":
+            replacement = ""
+        else:
+            key = (category, value)
+            if key not in seen:
+                counts[category] = counts.get(category, 0) + 1
+                token = f"[[{rid}:{category}:{counts[category]}]]"
+                seen[key] = token
+                mapping[token] = value
+            replacement = seen[key]
+        output.append(replacement)
+        position = end
+    output.append(text[position:])
+    return "".join(output), mapping
+
+def mask(text, rid, policies=None):
+    if "[[" in text or "]]" in text:
         raise GatewayError("input contains reserved placeholder syntax")
-    matches = [(m.start(), m.end(), "NAME") for n in NAMES
-               for m in re.finditer(re.escape(n), text)]
-    for cat, rx in PATTERNS.items():
-        matches += [(m.start(), m.end(), cat) for m in rx.finditer(text)]
-    mapping, seen, counts, out, pos = {}, {}, {}, [], 0
-    for start, end, cat in sorted(matches):
-        if start < pos:                         # skip overlapping match
-            continue
-        value = text[start:end]
-        if (cat, value) not in seen:            # repeated value -> same token
-            counts[cat] = counts.get(cat, 0) + 1
-            seen[(cat, value)] = f"[[{rid}:{cat}:{counts[cat]}]]"
-            mapping[seen[(cat, value)]] = value
-        out += [text[pos:start], seen[(cat, value)]]
-        pos = end
-    return "".join(out) + text[pos:], mapping
+    matches = apply_policies(detect(text), policies)
+    return build_mapping(text, matches, rid)
 
-
-def prepare_request(text, rid):
-    """Build the complete outbound request: the only thing the provider sees."""
-    masked, mapping = mask(text, rid)
-    request = {"prompt_version": PROMPT_VERSION,
-               "prompt": PROMPT_V1,
+def prepare_request(text, rid, policies=None, prompt_version="v1"):
+    if prompt_version not in PROMPTS:
+        raise GatewayError(f"invalid prompt version: {prompt_version}")
+    masked, mapping = mask(text, rid, policies)
+    request = {"prompt_version": prompt_version,
+               "prompt": PROMPTS[prompt_version],
                "text": masked}
     return request, mapping
 
-
-def mock_provider(request, mode="normal"):
-    """Offline, deterministic stand-in for the AI (ignores the prompt text)."""
+def mock_provider(request, mode="normal", rid="r1"):
+    if mode == "failure":
+        raise GatewayError("provider failure")
     if mode == "invalid":
-        return "Summary: [[r1:NAME:99]] reported an issue."
+        return f"Summary: [[{rid}:NAME:99]] reported an issue."
+    if mode == "foreign":
+        return "Summary: [[foreign:NAME:1]] reported an issue."
     if mode == "malformed":
-        return "Summary: [[r1:NAME:1] reported an issue."
-    masked = request["text"]
-    t = {}
-    for m in TOKEN_RE.finditer(masked):
-        t.setdefault(m.group(2), m.group(0))
-    who = t.get("NAME", "A user") + (f" ({t['EMPID']})" if "EMPID" in t else "")
-    s = f"Summary: {who} reported an issue"
-    if "TICKET" in t:
-        s += f" in ticket {t['TICKET']}"
-    if "IP" in t:
-        s += f" on device {t['IP']}"
-    details = re.split(r"(?<=[.!?])\s+", masked.strip())[-1]
-    return f"{s}. Details: {details}"
+        return f"Summary: [[{rid}:NAME:1] reported an issue."
 
+    tokens = {}
+    for match in TOKEN_RE.finditer(request["text"]):
+        tokens.setdefault(match.group(2), match.group())
+    who = tokens.get("NAME", "A user")
+    if "EMPID" in tokens:
+        who += f" ({tokens['EMPID']})"
+    summary = f"Summary: {who} reported an issue"
+    if "TICKET" in tokens:
+        summary += f" in ticket {tokens['TICKET']}"
+    if "IP" in tokens:
+        summary += f" on device {tokens['IP']}"
+    details = re.split(r"(?<=[.!?])\s+", request["text"].strip())[-1]
+    return f"{summary}. Details: {details}"
 
 def validate(response, rid, mapping):
-    """Reject placeholders that are unissued, foreign, or malformed."""
-    for m in TOKEN_RE.finditer(response):
-        if m.group(1) != rid or m.group(0) not in mapping:
-            raise GatewayError(f"invalid placeholder in response: {m.group(0)}")
-    leftover = TOKEN_RE.sub("", response)
-    if "[[" in leftover or "]]" in leftover:
+    if not isinstance(response, str):
+        raise GatewayError("malformed provider response")
+    for match in TOKEN_RE.finditer(response):
+        if match.group(1) != rid or match.group() not in mapping:
+            raise GatewayError(f"invalid placeholder in response: {match.group()}")
+    remaining = TOKEN_RE.sub("", response)
+    if "[[" in remaining or "]]" in remaining:
         raise GatewayError("malformed placeholder in response")
 
+def restore(response, mapping):
+    return TOKEN_RE.sub(lambda match: mapping[match.group()], response)
 
-def run(text, rid="r1", provider_mode="normal", show_request=False):
-    request, mapping = prepare_request(text, rid)
+def run(text, rid="r1", provider_mode="normal", show_request=False,
+        policies=None, prompt_version="v1"):
+    request, mapping = prepare_request(text, rid, policies, prompt_version)
     if show_request:
         print("OUTBOUND REQUEST:")
         for key, value in request.items():
             print(f"  {key}: {value}")
-    response = mock_provider(request, provider_mode)
+    try:
+        response = mock_provider(request, provider_mode, rid)
+    except GatewayError:
+        raise
+    except Exception:
+        raise GatewayError("provider failure") from None
     validate(response, rid, mapping)
-    return TOKEN_RE.sub(lambda m: mapping[m.group(0)], response)
+    return restore(response, mapping)
 
+def main(args):
+    policies = {}
+    text = []
+    mode = "normal"
+    prompt_version = "v1"
+    show_request = False
+
+    for arg in args:
+        if arg == "--show-request":
+            show_request = True
+        elif arg == "--bad-provider":
+            mode = "invalid"
+        elif arg == "--malformed-provider":
+            mode = "malformed"
+        elif arg == "--foreign-provider":
+            mode = "foreign"
+        elif arg == "--provider-failure":
+            mode = "failure"
+        elif arg == "--prompt-v2":
+            prompt_version = "v2"
+        elif arg.startswith("--policy="):
+            setting = arg[len("--policy="):]
+            if "=" not in setting:
+                raise GatewayError("policy must use CATEGORY=MASK or CATEGORY=REMOVE")
+            category, policy = setting.split("=", 1)
+            policies[category.upper()] = policy.upper()
+        else:
+            text.append(arg)
+
+    print(run(" ".join(text), provider_mode=mode, show_request=show_request,
+              policies=policies, prompt_version=prompt_version))
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    flags = [a for a in args if a in FLAGS]
-    text = " ".join(a for a in args if a not in FLAGS)
-    mode = ("invalid" if "--bad-provider" in flags else
-            "malformed" if "--malformed-provider" in flags else "normal")
     try:
-        print(run(text, provider_mode=mode, show_request="--show-request" in flags))
-    except GatewayError as e:
-        print("ERROR:", e)
+        main(sys.argv[1:])
+    except GatewayError as error:
+        print("ERROR:", error)
         sys.exit(1)
