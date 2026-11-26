@@ -93,7 +93,7 @@ V2
     Include the reported issue and relevant device or ticket details when present.
     Keep every [[...]] placeholder exactly as written. Do not invent facts.
 
-The prompt is stored as `PROMPT_V1` in main.py (version v1) and is part of the complete outbound request. `PROMPT_V2` gives more specific instructions about the technician audience, the information to include, the Summary and Details format, and preserving placeholders. The same three synthetic cases were run with both versions. The offline mock ignores prompt wording, so identical mock outputs do not establish real-model prompt quality.
+The prompt is stored as `v1` in main.py (version v1) and is part of the complete outbound request. `v2` gives more specific instructions about the technician audience, the information to include, the Summary and Details format, and preserving placeholders. The same three synthetic cases were run with both versions. The offline mock ignores prompt wording, so identical mock outputs do not establish real-model prompt quality.
 
 ## Design decisions
 
