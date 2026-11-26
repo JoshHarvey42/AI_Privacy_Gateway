@@ -2,16 +2,12 @@
 
 All results below come from the offline mock provider and synthetic fixtures. No real model was used.
 
-## Planned acceptance cases (M1)
+## Planned acceptance cases
 
 1. Ordinary input: "Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi."
 2. Repeated values: "Sarah Johnson called. Michael Chen helped Sarah Johnson."
 3. No sensitive data: "The printer is jammed."
 4. Invalid placeholder response: case 1 input with the mock returning [[r1:NAME:99]]
-
-Extra case added in M2: "Device 192.168.1.25 is offline." (IP address)
-
-Added after M2 feedback: a malformed placeholder response (the mock returns [[r1:NAME:1] with a missing bracket).
 
 ## Executed tests (python -m unittest -v, 20 tests, all pass)
 
