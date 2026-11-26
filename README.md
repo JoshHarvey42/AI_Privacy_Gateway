@@ -23,10 +23,24 @@ Python 3.15.1
 
 ## Run
 
+Run all commands from the project folder (the folder that contains main.py).
+
     python main.py "Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi."
 
 Expected output:
 
+    Summary: Sarah Johnson (EMP1042) reported an issue in ticket IT-5821. Details: Her laptop cannot connect to Wi-Fi.
+
+Show the complete outbound request (everything the provider receives):
+
+    python main.py --show-request "Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi."
+
+Expected output:
+
+    OUTBOUND REQUEST:
+      prompt_version: v1
+      prompt: You summarize IT help desk tickets in one or two sentences. Keep every [[...]] placeholder exactly as written. Do not invent facts.
+      text: [[r1:NAME:1]] ([[r1:EMPID:1]]) submitted ticket [[r1:TICKET:1]]. Her laptop cannot connect to Wi-Fi.
     Summary: Sarah Johnson (EMP1042) reported an issue in ticket IT-5821. Details: Her laptop cannot connect to Wi-Fi.
 
 Invalid placeholder from the provider (the mock is told to misbehave):
@@ -37,16 +51,25 @@ Expected output (exit code 1):
 
     ERROR: invalid placeholder in response: [[r1:NAME:99]]
 
+Malformed placeholder from the provider (the mock returns [[r1:NAME:1] with a missing bracket):
+
+    python main.py --malformed-provider "Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi."
+
+Expected output (exit code 1):
+
+    ERROR: malformed placeholder in response
+
 ## Test
 
     python -m unittest -v
 
-Expected: Ran 7 tests ... OK
+Expected: Ran 10 tests ... OK
 
 ## Files
 
 - main.py: the gateway
 - test_main.py: automated tests
+- tech_spike.py: M1 Tech Spike (reads and echoes text)
 - docs/DESIGN.md: requirements, language choice, architecture, prompt, decisions
 - docs/USER_GUIDE.md: how to run, formats, warnings, troubleshooting
 - docs/EVALUATION.md: planned and executed cases, results, limitations
