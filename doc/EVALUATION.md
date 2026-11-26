@@ -13,7 +13,7 @@ Extra case added in M2: "Device 192.168.1.25 is offline." (IP address)
 
 Added after M2 feedback: a malformed placeholder response (the mock returns [[r1:NAME:1] with a missing bracket).
 
-## Executed tests (python -m unittest -v, 10 tests, all pass)
+## Executed tests (python -m unittest -v, 20 tests, all pass)
 
 - test_ordinary: summary with original values restored
 - test_outbound_masked: masked text exactly as expected, and Sarah, EMP1042, IT-5821 not present
@@ -25,36 +25,50 @@ Added after M2 feedback: a malformed placeholder response (the mock returns [[r1
 - test_malformed_placeholders_rejected: seven malformed responses each raise "malformed", including [[r1:NAME:]], [[r1:name:1]], and [[r1:NAME:1]
 - test_malformed_placeholder_from_provider: full run with the mock returning a malformed placeholder raises "malformed"
 - test_reserved_placeholder_input: controlled error raised
+- test_default_policy_is_mask and test_remove_policy: default masking and explicit removal work
+- test_invalid_policy_rejected and test_unknown_policy_category_rejected: invalid settings produce controlled errors
+- test_overlapping_matches_choose_longest: overlap selection is deterministic
+- test_independent_request_mappings: mappings remain separate between requests
+- test_foreign_request_placeholder_rejected: a token from another request is rejected
+- test_provider_failure_controlled and test_provider_failure_does_not_use_unmasked_fallback: provider failure is safe
+- test_prompt_versions_are_available: both prompt versions can be selected
+- test_default_policy_is_mask and test_remove_policy: default masking and explicit removal work
+- test_invalid_policy_rejected and test_unknown_policy_category_rejected: invalid settings produce controlled errors
+- test_overlapping_matches_choose_longest: overlap selection is deterministic
+- test_independent_request_mappings: mappings remain separate between requests
+- test_foreign_request_placeholder_rejected: a token from another request is rejected
+- test_provider_failure_controlled and test_provider_failure_does_not_use_unmasked_fallback: provider failure is safe
+- test_prompt_versions_are_available: both prompt versions can be selected
 
 ## Detection counts (labeled cases above)
 
-Protected-value occurrences: ordinary 3, repeated 3, none 0, invalid-placeholder case 3, IP 1.
+The three synthetic cases used for the prompt comparison contain five protected-value occurrences: Sarah Johnson, EMP1042, and IT-5821 (3); Michael Chen and 192.168.1.25 (2); and a printer issue with no protected values (0).
 
-- TP: 10
+- TP: 5
 - FP: 0
 - FN: 0
-- Precision: 10/10 = 1.00
-- Recall: 10/10 = 1.00
-- Leaks in the complete outbound request (prompt_version, prompt, and text): 0
+- Precision: 5 / (5 + 0) = 1.00
+- Recall: 5 / (5 + 0) = 1.00
+- Leaks in the outbound request: 0
 
-These numbers are on five small hand-made cases, so they show the rules work on those cases, not that detection is reliable in general.
+These numbers are from three small synthetic cases and do not establish general detection accuracy. The name detector still depends on the configured name list.
 
 ## Invalid tokens and restoration
 
 - Invalid placeholder in response: rejected before restoration, no output produced
 - Malformed placeholder in response: rejected before restoration, no output produced
 - Valid placeholders: restored correctly in cases 1, 2, and 5
-- REMOVE is not implemented yet
+- Valid `MASK` placeholders are restored correctly. Values selected for `REMOVE` are deleted before the provider receives the request.
 
 ## Usefulness of output
 
-The mock builds the summary from a fixed template and the last sentence of the ticket, so it shows that placeholders survive the round trip. It does not show how useful a real AI summary would be. Prompt usefulness is not evaluated yet
+The mock builds the summary from a fixed template and the last sentence of the ticket, so it shows that placeholders survive the round trip. It does not show how useful a real AI summary would be. Prompt usefulness is compared through the prompt instructions, but the mock provider cannot measure real-model prompt quality.
 
 ## Limitations
 
 - Names must be in the term list; an unlisted name is a false negative (not yet tested)
 - IP pattern accepts numbers above 255
-- Only one request is run at a time; cross-request isolation is not tested yet
-- No provider timeout tests yet
-- The malformed check rejects [[ or ]] left in a response, but not a single stray bracket
+- The command-line program processes one ticket per run; request mappings are kept separate and are not shared between calls
+- Provider failures are simulated, but real network timeouts are not tested
+- The malformed check rejects leftover `[[` or `]]` syntax; it does not attempt to identify every possible stray single bracket
 - Only exact-case matches: "sarah johnson" would not be found
