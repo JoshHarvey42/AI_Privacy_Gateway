@@ -1,16 +1,18 @@
 import re
 import sys
 
-NAMES = ["Sarah Johnson", "Michael Chen"]  # synthetic name list
+NAMES = ["Sarah Johnson", "Michael Chen"]  # synthetic term list
 PATTERNS = {                                # structured patterns
     "EMPID": re.compile(r"\bEMP\d+\b"),
     "TICKET": re.compile(r"\bIT-\d+\b"),
     "IP": re.compile(r"\b\d{1,3}(?:\.\d{1,3}){3}\b"),
 }
-PROMPT = ("You summarize IT help desk tickets in one or two sentences. "
+PROMPT_VERSION = "v1"
+PROMPT_V1 = ("You summarize IT help desk tickets in one or two sentences. "
              "Keep every [[...]] placeholder exactly as written. "
              "Do not invent facts.")
-TOKEN_RE = re.compile(r"\[\[(r\d+):([A-Z]+):(\d+)\]\]")
+TOKEN_RE = re.compile(r"\[\[(r\d+):([A-Z]+):(\d+)\]\]")  # one valid placeholder
+FLAGS = {"--show-request", "--bad-provider", "--malformed-provider"}
 
 
 class GatewayError(Exception):
@@ -39,10 +41,22 @@ def mask(text, rid):
     return "".join(out) + text[pos:], mapping
 
 
-def mock_provider(prompt, masked, bad=False):
-    """Offline stand-in for the AI (ignores the prompt text)."""
-    if bad:
+def prepare_request(text, rid):
+    """Build the complete outbound request: the only thing the provider sees."""
+    masked, mapping = mask(text, rid)
+    request = {"prompt_version": PROMPT_VERSION,
+               "prompt": PROMPT_V1,
+               "text": masked}
+    return request, mapping
+
+
+def mock_provider(request, mode="normal"):
+    """Offline, deterministic stand-in for the AI (ignores the prompt text)."""
+    if mode == "invalid":
         return "Summary: [[r1:NAME:99]] reported an issue."
+    if mode == "malformed":
+        return "Summary: [[r1:NAME:1] reported an issue."
+    masked = request["text"]
     t = {}
     for m in TOKEN_RE.finditer(masked):
         t.setdefault(m.group(2), m.group(0))
@@ -57,24 +71,34 @@ def mock_provider(prompt, masked, bad=False):
 
 
 def validate(response, rid, mapping):
+    """Reject placeholders that are unissued, foreign, or malformed."""
     for m in TOKEN_RE.finditer(response):
         if m.group(1) != rid or m.group(0) not in mapping:
             raise GatewayError(f"invalid placeholder in response: {m.group(0)}")
+    leftover = TOKEN_RE.sub("", response)
+    if "[[" in leftover or "]]" in leftover:
+        raise GatewayError("malformed placeholder in response")
 
 
-def run(text, rid="r1", bad_provider=False):
-    masked, mapping = mask(text, rid)           # mapping exists only in this call
-    response = mock_provider(PROMPT, masked, bad_provider)
+def run(text, rid="r1", provider_mode="normal", show_request=False):
+    request, mapping = prepare_request(text, rid)
+    if show_request:
+        print("OUTBOUND REQUEST:")
+        for key, value in request.items():
+            print(f"  {key}: {value}")
+    response = mock_provider(request, provider_mode)
     validate(response, rid, mapping)
     return TOKEN_RE.sub(lambda m: mapping[m.group(0)], response)
 
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    bad = "--bad-provider" in args
-    args = [a for a in args if a != "--bad-provider"]
+    flags = [a for a in args if a in FLAGS]
+    text = " ".join(a for a in args if a not in FLAGS)
+    mode = ("invalid" if "--bad-provider" in flags else
+            "malformed" if "--malformed-provider" in flags else "normal")
     try:
-        print(run(" ".join(args), bad_provider=bad))
+        print(run(text, provider_mode=mode, show_request="--show-request" in flags))
     except GatewayError as e:
         print("ERROR:", e)
         sys.exit(1)
