@@ -1,6 +1,6 @@
 # IT Help Desk Privacy Gateway
 
-Milestone M2 (working prototype).
+Milestone M3 (working prototype).
 
 The program helps an IT help desk technician summarize a support ticket with an AI tool without sending private values. It finds sensitive values, replaces them with placeholders locally, sends only the masked text to an offline mock provider, checks the response, and puts the original values back locally.
 
@@ -13,9 +13,9 @@ The program helps an IT help desk technician summarize a support ticket with an 
 - Single request at a time, command line only, synthetic data only
 - Offline mock provider (no real AI, no network, no API keys)
 
-Pipeline: input -> detect -> mask -> mock provider -> validate -> restore -> output
+Pipeline: input -> detect -> apply policy -> mask/remove -> mock provider -> validate -> restore -> output
 
-Placeholder form: [[r1:NAME:1]] (request id, category, number). The mapping from placeholder to real value exists only inside one request.
+Placeholder form: [[r1:NAME:1]] (request id, category, number). The mapping from placeholder to real value exists only inside one request. Each category uses `MASK` by default; `REMOVE` can be selected instead. Overlapping detections are resolved consistently by selecting the longest match first.
 
 ## Setup
 
@@ -59,11 +59,23 @@ Expected output (exit code 1):
 
     ERROR: malformed placeholder in response
 
+Use a removal policy (the other categories still use `MASK`):
+
+    python main.py --policy=NAME=REMOVE "Sarah Johnson submitted ticket IT-5821."
+
+Select the more detailed prompt or simulate provider problems:
+
+    python main.py --prompt-v2 "Sarah Johnson submitted ticket IT-5821."
+    python main.py --foreign-provider "Sarah Johnson submitted ticket IT-5821."
+    python main.py --provider-failure "Sarah Johnson submitted ticket IT-5821."
+
+Invalid, malformed, and foreign-request placeholders are rejected before restoration. Provider failures produce a controlled error; the gateway never retries with unmasked text.
+
 ## Test
 
     python -m unittest -v
 
-Expected: Ran 10 tests ... OK
+Expected: 20 tests ... OK
 
 ## Files
 
