@@ -6,11 +6,19 @@ Takes the text of one IT support ticket, hides private values, gets a summary fr
 
 ## Run
 
+Run from the project folder (the folder that contains main.py):
+
     python main.py "<insert ticket>"
 
 Put the ticket text in quotes. Example:
 
     python main.py "Sarah Johnson (EMP1042) submitted ticket IT-5821. Her laptop cannot connect to Wi-Fi."
+
+To see exactly what is sent to the provider, put --show-request before the ticket:
+
+    python main.py --show-request "<insert ticket>"
+
+This prints the complete outbound request (prompt_version, prompt, and masked text) before the summary.
 
 ## Supported formats
 
@@ -29,5 +37,7 @@ Put the ticket text in quotes. Example:
 
 - ERROR: input contains reserved placeholder syntax: your text includes something like [[r1:NAME:1]]. Remove it.
 - ERROR: invalid placeholder in response: the provider returned a placeholder that was not issued for this request. This is expected with --bad-provider.
-- A name was not hidden: add it to NAMES in main.py.
+- ERROR: malformed placeholder in response: the provider returned a damaged placeholder, such as one missing a bracket. This is expected with --malformed-provider.
+- A name was not hidden: add it to NAMES in main.py. Use --show-request to check what was sent.
 - python not found: try python3 main.py "..."
+- No such file main.py: you are in the wrong folder. Change to the project folder first.
