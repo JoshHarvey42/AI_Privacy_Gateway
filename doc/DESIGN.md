@@ -81,10 +81,17 @@ The implementation uses strings for ticket text and provider responses, tuples `
 A response is also rejected as malformed if, after all valid placeholders are removed, [[ or ]] is still left (for example [[r1:NAME:]] or [[r1:NAME:1]).
 
 ## Prompt
+V1
+
     You summarize IT help desk tickets in one or two sentences.
     Keep every [[...]] placeholder exactly as written. Do not invent facts.
+    
+V2
 
-    You summarize an IT help desk ticket for a technician. Return a Summary and Details section. Include the reported issue and relevant device or ticket details when present. Keep every [[...]] placeholder exactly as written. Do not invent facts.
+    You summarize an IT help desk ticket for a technician.
+    Return a Summary and Details section.
+    Include the reported issue and relevant device or ticket details when present.
+    Keep every [[...]] placeholder exactly as written. Do not invent facts.
 
 The prompt is stored as `PROMPT_V1` in main.py (version v1) and is part of the complete outbound request. `PROMPT_V2` gives more specific instructions about the technician audience, the information to include, the Summary and Details format, and preserving placeholders. The same three synthetic cases were run with both versions. The offline mock ignores prompt wording, so identical mock outputs do not establish real-model prompt quality.
 
