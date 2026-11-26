@@ -11,14 +11,19 @@ All results below come from the offline mock provider and synthetic fixtures. No
 
 Extra case added in M2: "Device 192.168.1.25 is offline." (IP address)
 
-## Executed tests (python -m unittest -v, 7 tests, all pass)
+Added after M2 feedback: a malformed placeholder response (the mock returns [[r1:NAME:1] with a missing bracket).
+
+## Executed tests (python -m unittest -v, 10 tests, all pass)
 
 - test_ordinary: summary with original values restored
 - test_outbound_masked: masked text exactly as expected, and Sarah, EMP1042, IT-5821 not present
+- test_complete_outbound_request_has_no_protected_values: the request has exactly the fields prompt_version, prompt, and text, and none of Sarah, Johnson, EMP1042, or IT-5821 appears in any field
 - test_ip_address: IP masked
 - test_repeated_and_distinct: repeated name shares one placeholder, second name gets NAME:2
 - test_no_sensitive_data: summary produced, nothing masked
 - test_invalid_placeholder_response: controlled error raised
+- test_malformed_placeholders_rejected: seven malformed responses each raise "malformed", including [[r1:NAME:]], [[r1:name:1]], and [[r1:NAME:1]
+- test_malformed_placeholder_from_provider: full run with the mock returning a malformed placeholder raises "malformed"
 - test_reserved_placeholder_input: controlled error raised
 
 ## Detection counts (labeled cases above)
@@ -30,13 +35,14 @@ Protected-value occurrences: ordinary 3, repeated 3, none 0, invalid-placeholder
 - FN: 0
 - Precision: 10/10 = 1.00
 - Recall: 10/10 = 1.00
-- Leaks in outbound text: 0
+- Leaks in the complete outbound request (prompt_version, prompt, and text): 0
 
 These numbers are on five small hand-made cases, so they show the rules work on those cases, not that detection is reliable in general.
 
 ## Invalid tokens and restoration
 
 - Invalid placeholder in response: rejected before restoration, no output produced
+- Malformed placeholder in response: rejected before restoration, no output produced
 - Valid placeholders: restored correctly in cases 1, 2, and 5
 - REMOVE is not implemented yet
 
@@ -49,5 +55,6 @@ The mock builds the summary from a fixed template and the last sentence of the t
 - Names must be in the term list; an unlisted name is a false negative (not yet tested)
 - IP pattern accepts numbers above 255
 - Only one request is run at a time; cross-request isolation is not tested yet
-- No provider timeout or malformed-response tests yet
+- No provider timeout tests yet
+- The malformed check rejects [[ or ]] left in a response, but not a single stray bracket
 - Only exact-case matches: "sarah johnson" would not be found
