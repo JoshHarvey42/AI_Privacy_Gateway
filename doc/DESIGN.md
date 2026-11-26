@@ -40,7 +40,7 @@ IT help desk tickets contain employee names, employee IDs, ticket numbers, and I
 Python was compared with Java.
 
 - String processing: Python was chosen because the main purpose of the project is to identify and replace sensitive information in help desk tickets. Python provides simple string methods and the built-in re library, which makes it easy to detect patterns such as IPv4 addresses and replace sensitive values with placeholders. Java can accomplish the same tasks, but Python requires less code to implement them.
-- JSON Support: Python was chosen because the project uses JSON to receive input and return its results. Python's built-in json library makes it easy to read input data, create the outbound request, and return the processed response without installing additional libraries. Java typically requires more setup and code to handle the same JSON operations.
+- Error handling: * Error handling: Python was chosen because its exceptions make it simple to handle errors during input processing and response validation. For example, mask() rejects input that already contains placeholder syntax, and validate() rejects invalid, unknown, or malformed placeholders in the provider response. Both raise GatewayError, and the main block catches it, prints an ERROR line, and exits with code 1, so the program fails in a controlled way instead of crashing. Java also provides strong error handling through exceptions, but its checked exceptions must be declared and handled in each method, so Python requires less code to implement these checks.
 
 ## Data flow and boundary
 
