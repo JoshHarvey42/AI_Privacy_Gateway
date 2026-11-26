@@ -39,12 +39,8 @@ IT help desk tickets contain employee names, employee IDs, ticket numbers, and I
 
 Python was compared with Java.
 
-- String processing: Python has built-in regular expressions and simple string handling, so detection and replacement take few lines. Java needs more code for the same work.
-- Type system: Java checks types at compile time and would catch some mistakes earlier. Python is dynamically typed, so errors such as passing the wrong type appear only when the code runs. I accept this because the program is small and unit tests cover the main paths.
-- Error handling: Python exceptions (GatewayError) make controlled errors short to write. Java would work equally well but needs more setup.
-- Deployment: Python runs directly with one command and no build step.
-
-Choice: Python, because string processing and quick testing matter most for this task.
+- String processing: Python was chosen because the main purpose of the project is to identify and replace sensitive information in help desk tickets. Python provides simple string methods and the built-in re library, which makes it easy to detect patterns such as IPv4 addresses and replace sensitive values with placeholders. Java can accomplish the same tasks, but Python requires less code to implement them.
+- JSON Support: Python was chosen because the project uses JSON to receive input and return its results. Python's built-in json library makes it easy to read input data, create the outbound request, and return the processed response without installing additional libraries. Java typically requires more setup and code to handle the same JSON operations.
 
 ## Data flow and boundary
 
